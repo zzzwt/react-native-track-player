@@ -2,9 +2,10 @@ package com.guichaguri.trackplayer.service.player;
 
 import android.content.Context;
 import android.util.Log;
+
 import com.facebook.react.bridge.Promise;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.database.DatabaseProvider;
@@ -13,12 +14,12 @@ import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
 import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,7 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
     private SimpleCache cache;
     private ConcatenatingMediaSource source;
     private boolean prepared = false;
+    private boolean enabledAudioOffload = false;
 
     public LocalPlayback(Context context, MusicManager manager, SimpleExoPlayer player, long maxCacheSize) {
         super(context, manager, player);
@@ -59,13 +61,17 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
     public DataSource.Factory enableCaching(DataSource.Factory ds) {
         if(cache == null || cacheMaxSize <= 0) return ds;
 
-        return new CacheDataSourceFactory(cache, ds, CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
+        return new CacheDataSource.Factory()
+                                .setCache(cache)
+                                .setUpstreamDataSourceFactory(ds)
+                                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
     }
 
     private void prepare() {
         if(!prepared) {
             Log.d(Utils.LOG, "Preparing the media source...");
-            player.prepare(source, false, false);
+            player.setMediaSource(source, false);
+            player.prepare();
             prepared = true;
         }
     }
@@ -140,7 +146,8 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
         queue.clear();
 
         source = new ConcatenatingMediaSource();
-        player.prepare(source, true, true);
+        player.setMediaSource(source, true);
+        player.prepare();
         prepared = false; // We set it to false as the queue is now empty
 
         lastKnownWindow = C.INDEX_UNSET;
@@ -189,16 +196,16 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
     }
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+    public void onPlaybackStateChanged(int playbackState) {
         if(playbackState == Player.STATE_ENDED) {
             prepared = false;
         }
 
-        super.onPlayerStateChanged(playWhenReady, playbackState);
+        super.onPlaybackStateChanged(playbackState);
     }
 
     @Override
-    public void onPlayerError(ExoPlaybackException error) {
+    public void onPlayerError(PlaybackException error) {
         prepared = false;
         super.onPlayerError(error);
     }
@@ -217,4 +224,20 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
         }
     }
 
+    // @Override
+    // public void onExperimentalOffloadSchedulingEnabledChanged(boolean offloadSchedulingEnabled) {
+    //     Log.d(Utils.LOG, "onExperimentalOffloadSchedulingEnabledChanged: " + offloadSchedulingEnabled);
+
+    // }
+
+    @Override
+    public void enableAudioOffload(boolean enabled) {
+        if (
+            enabledAudioOffload == enabled ||
+            (enabled && !manager.shouldEnableAudioOffload())
+        ) return;
+        player.experimentalSetOffloadSchedulingEnabled(enabled);
+        Log.d(Utils.LOG, "enableAudioOffload: " + (enabled ? "true" : "false"));
+        enabledAudioOffload = enabled;
+    }
 }

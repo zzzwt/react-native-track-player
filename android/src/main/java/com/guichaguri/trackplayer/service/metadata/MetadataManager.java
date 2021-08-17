@@ -1,28 +1,28 @@
 package com.guichaguri.trackplayer.service.metadata;
 
-import android.app.NotificationChannel;
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationCompat.Action;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
-import androidx.media.app.NotificationCompat.MediaStyle;
-import androidx.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationCompat.Action;
+import androidx.media.app.NotificationCompat.MediaStyle;
+import androidx.media.session.MediaButtonReceiver;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
 import com.guichaguri.trackplayer.R;
 import com.guichaguri.trackplayer.service.MusicManager;
@@ -30,6 +30,7 @@ import com.guichaguri.trackplayer.service.MusicService;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
 import com.guichaguri.trackplayer.service.player.ExoPlayback;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -221,6 +222,8 @@ public class MetadataManager {
                             artworkTarget = null;
                         }
                     });
+        } else {
+            builder.setLargeIcon(null);
         }
 
         builder.setContentTitle(track.title);
@@ -237,6 +240,7 @@ public class MetadataManager {
      * Updates the playback state and notification buttons
      * @param playback The player
      */
+    @SuppressLint("RestrictedApi")
     public void updatePlayback(ExoPlayback playback) {
         int state = playback.getState();
         boolean playing = Utils.isPlaying(state);
@@ -307,6 +311,7 @@ public class MetadataManager {
     }
 
     public void setActive(boolean active) {
+        if (session.isActive() == active) return;
         this.session.setActive(active);
 
         updateNotification();
@@ -346,6 +351,7 @@ public class MetadataManager {
         return new Action(icon, title, MediaButtonReceiver.buildMediaButtonPendingIntent(service, action));
     }
 
+    @SuppressLint("RestrictedApi")
     private void addAction(Action action, long id, List<Integer> compact) {
         if(action == null) return;
 

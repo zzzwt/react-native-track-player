@@ -54,4 +54,8 @@ public class MusicBinder extends Binder {
         service.stopSelf();
     }
 
+    public void enableAudioOffload(boolean enabled) {
+        manager.getPlayback().enableAudioOffload(enabled);
+    }
+
 }

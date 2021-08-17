@@ -120,6 +120,8 @@ If the player is already initialized, the promise will resolve instantly.
 | options.iosCategoryMode  | `string` | [AVAudioSession.Mode](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616508-mode) for iOS. | `default` | ✗ | ✓ | ✗ |
 | options.iosCategoryPolicy  | `string` | [AVAudioSession.RouteSharingPolicy](https://developer.apple.com/documentation/avfaudio/avaudiosession/2887118-routesharingpolicy) for iOS. | `default` | ✗ | ✓ | ✗ |
 | options.waitForBuffer   | `boolean` | Indicates whether the player should automatically delay playback in order to minimize stalling. If you notice that network media immediately pauses after it buffers, setting this to `true` may help. | false | ✗ | ✓ | ✗ |
+| options.audioOffload   | `boolean` | Sets whether audio should be played using the offload path, significantly reduces the energy consumption of the playback when audio offload is enabled. | true | ✓ | ✗ | ✗ |
+| options.handleAudioFocus   | `boolean` | True if the player should handle audio focus, false otherwise. | true | ✓ | ✗ | ✗ |
 
 #### `destroy()`
 Destroys the player, cleaning up its resources. After executing this function, you won't be able to use the player anymore, unless you call `setupPlayer()` again.

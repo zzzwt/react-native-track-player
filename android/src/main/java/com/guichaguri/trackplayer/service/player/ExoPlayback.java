@@ -1,12 +1,25 @@
 package com.guichaguri.trackplayer.service.player;
 
+import static com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_NONE;
+import static com.google.android.exoplayer2.Player.PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS;
+import static com.google.android.exoplayer2.Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY;
+import static com.google.android.exoplayer2.Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS;
+
 import android.content.Context;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.facebook.react.bridge.Promise;
-import com.google.android.exoplayer2.*;
-import com.google.android.exoplayer2.Player.EventListener;
+import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackException;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline.Window;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
@@ -17,9 +30,11 @@ import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,7 +43,7 @@ import java.util.List;
 /**
  * @author Guichaguri
  */
-public abstract class ExoPlayback<T extends Player> implements EventListener, MetadataOutput {
+public abstract class ExoPlayback<T extends Player> implements Player.Listener, MetadataOutput {
 
     protected final Context context;
     protected final MusicManager manager;
@@ -47,8 +62,8 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
         this.manager = manager;
         this.player = player;
 
-        Player.MetadataComponent component = player.getMetadataComponent();
-        if(component != null) component.addMetadataOutput(this);
+        // Player.MetadataComponent component = player.getMetadataComponent();
+        // if(component != null) component.addMetadataOutput(this);
     }
 
     public void initialize() {
@@ -66,6 +81,8 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
     public abstract void remove(List<Integer> indexes, Promise promise);
 
     public abstract void removeUpcomingTracks();
+
+    public abstract void enableAudioOffload(boolean enabled);
 
     public void updateTrack(int index, Track track) {
         int currentIndex = player.getCurrentWindowIndex();
@@ -89,8 +106,9 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
 
         for(int i = 0; i < queue.size(); i++) {
             if(id.equals(queue.get(i).id)) {
-                lastKnownWindow = player.getCurrentWindowIndex();
-                lastKnownPosition = player.getCurrentPosition();
+                // lastKnownWindow = player.getCurrentWindowIndex();
+                // lastKnownPosition = player.getCurrentPosition();
+
 
                 player.seekToDefaultPosition(i);
                 promise.resolve(null);
@@ -109,8 +127,8 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
             return;
         }
 
-        lastKnownWindow = player.getCurrentWindowIndex();
-        lastKnownPosition = player.getCurrentPosition();
+        // lastKnownWindow = player.getCurrentWindowIndex();
+        // lastKnownPosition = player.getCurrentPosition();
 
         player.seekToDefaultPosition(prev);
         promise.resolve(null);
@@ -124,8 +142,8 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
             return;
         }
 
-        lastKnownWindow = player.getCurrentWindowIndex();
-        lastKnownPosition = player.getCurrentPosition();
+        // lastKnownWindow = player.getCurrentWindowIndex();
+        // lastKnownPosition = player.getCurrentPosition();
 
         player.seekToDefaultPosition(next);
         promise.resolve(null);
@@ -140,19 +158,20 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
     }
 
     public void stop() {
-        lastKnownWindow = player.getCurrentWindowIndex();
-        lastKnownPosition = player.getCurrentPosition();
+        lastKnownWindow = C.INDEX_UNSET;
+        lastKnownPosition = C.POSITION_UNSET;
 
-        player.stop(false);
+        player.stop();
         player.setPlayWhenReady(false);
-        player.seekTo(lastKnownWindow,0);
+        player.seekTo(0);
     }
 
     public void reset() {
-        lastKnownWindow = player.getCurrentWindowIndex();
-        lastKnownPosition = player.getCurrentPosition();
+        lastKnownWindow = C.INDEX_UNSET;
+        lastKnownPosition = C.POSITION_UNSET;
 
-        player.stop(true);
+        player.stop();
+        player.clearMediaItems();
         player.setPlayWhenReady(false);
     }
 
@@ -181,6 +200,7 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
     }
 
     public void seekTo(long time) {
+        if (queue.size() < 1) return;
         lastKnownWindow = player.getCurrentWindowIndex();
         lastKnownPosition = player.getCurrentPosition();
 
@@ -231,28 +251,17 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
     }
 
     @Override
-    public void onTimelineChanged(@NonNull Timeline timeline, int reason) {
-        Log.d(Utils.LOG, "onTimelineChanged: " + reason);
-
-        if((reason == Player.TIMELINE_CHANGE_REASON_PREPARED || reason == Player.TIMELINE_CHANGE_REASON_DYNAMIC) && !timeline.isEmpty()) {
-            onPositionDiscontinuity(Player.DISCONTINUITY_REASON_INTERNAL);
-        }
-    }
-
-    @Override
-    public void onPositionDiscontinuity(int reason) {
-        Log.d(Utils.LOG, "onPositionDiscontinuity: " + reason);
-
+    public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
         if(lastKnownWindow != player.getCurrentWindowIndex()) {
             Track previous = lastKnownWindow == C.INDEX_UNSET || lastKnownWindow >= queue.size() ? null : queue.get(lastKnownWindow);
             Track next = getCurrentTrack();
 
             // Track changed because it ended
             // We'll use its duration instead of the last known position
-            if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION && lastKnownWindow != C.INDEX_UNSET) {
-                if (lastKnownWindow >= player.getCurrentTimeline().getWindowCount()) return;
-                long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
-                if(duration != C.TIME_UNSET) lastKnownPosition = duration;
+            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION && lastKnownWindow != C.INDEX_UNSET) {
+              if (lastKnownWindow >= player.getCurrentTimeline().getWindowCount()) return;
+              long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
+              if(duration != C.TIME_UNSET) lastKnownPosition = duration;
             }
 
             manager.onTrackUpdate(previous, lastKnownPosition, next);
@@ -281,13 +290,90 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
         }
     }
 
+    // @Override
+    // public void onLoadingChanged(boolean isLoading) {
+    //     // Buffering updates
+    // }
+
     @Override
-    public void onLoadingChanged(boolean isLoading) {
-        // Buffering updates
+    public void onPlaybackStateChanged(int state) {
+        handlePlaybackStateChange();
     }
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+    public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
+        handlePlaybackStateChange();
+        Log.d(Utils.LOG, "reason: " + reason);
+
+
+        switch (reason) {
+            case PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS:
+                manager.onAudioFocusChange(true, true, false);
+                break;
+            case PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY:
+                manager.onAudioFocusChange(false, true, false);
+                break;
+        }
+    }
+
+    @Override
+    public void onPlaybackSuppressionReasonChanged(int playbackSuppressionReason) {
+        boolean ducking = false;
+
+        switch (playbackSuppressionReason) {
+            case PLAYBACK_SUPPRESSION_REASON_TRANSIENT_AUDIO_FOCUS_LOSS:
+                ducking = true;
+                break;
+            case PLAYBACK_SUPPRESSION_REASON_NONE:
+                break;
+        }
+
+        manager.onAudioFocusChange(false, ducking, ducking);
+    }
+
+    @Override
+    public void onRepeatModeChanged(int repeatMode) {
+        // Repeat mode update
+    }
+
+    @Override
+    public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+        // Shuffle mode update
+    }
+
+    @Override
+    public void onPlayerError(PlaybackException error) {
+        String code;
+        Throwable cause = error.getCause();
+        if (cause instanceof HttpDataSource.HttpDataSourceException) {
+            code = "playback-source";
+        } else if (cause instanceof ExoPlaybackException) {
+            code = "playback-renderer";
+        } else {
+            code = "playback"; // Other unexpected errors related to the playback
+        }
+        // if(error.type == ExoPlaybackException.TYPE_SOURCE) {
+        //     code = "playback-source";
+        // } else if(error.type == ExoPlaybackException.TYPE_RENDERER) {
+        //    code = "playback-renderer";
+        // } else {
+        //     code = "playback"; // Other unexpected errors related to the playback
+        // }
+
+        manager.onError(code, error.getCause().getMessage());
+    }
+
+    @Override
+    public void onPlaybackParametersChanged(@NonNull PlaybackParameters playbackParameters) {
+        // Speed or pitch changes
+    }
+
+    // @Override
+    // public void onSeekProcessed() {
+    //     // Finished seeking
+    // }
+
+    private void handlePlaybackStateChange() {
         int state = getState();
 
         if(state != previousState) {
@@ -309,41 +395,6 @@ public abstract class ExoPlayback<T extends Player> implements EventListener, Me
                 manager.onEnd(previous, position);
             }
         }
-    }
-
-    @Override
-    public void onRepeatModeChanged(int repeatMode) {
-        // Repeat mode update
-    }
-
-    @Override
-    public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-        // Shuffle mode update
-    }
-
-    @Override
-    public void onPlayerError(ExoPlaybackException error) {
-        String code;
-
-        if(error.type == ExoPlaybackException.TYPE_SOURCE) {
-            code = "playback-source";
-        } else if(error.type == ExoPlaybackException.TYPE_RENDERER) {
-            code = "playback-renderer";
-        } else {
-            code = "playback"; // Other unexpected errors related to the playback
-        }
-
-        manager.onError(code, error.getCause().getMessage());
-    }
-
-    @Override
-    public void onPlaybackParametersChanged(@NonNull PlaybackParameters playbackParameters) {
-        // Speed or pitch changes
-    }
-
-    @Override
-    public void onSeekProcessed() {
-        // Finished seeking
     }
 
     private void handleId3Metadata(Metadata metadata) {

@@ -1,6 +1,8 @@
 package com.guichaguri.trackplayer.module;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -9,8 +11,18 @@ import android.os.IBinder;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import com.facebook.react.bridge.*;
+
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.google.android.exoplayer2.C;
 import com.guichaguri.trackplayer.service.MusicBinder;
 import com.guichaguri.trackplayer.service.MusicService;
@@ -18,9 +30,14 @@ import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
 import com.guichaguri.trackplayer.service.player.ExoPlayback;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
 
 /**
  * @author Guichaguri
@@ -32,9 +49,12 @@ public class MusicModule extends ReactContextBaseJavaModule implements ServiceCo
     private ArrayDeque<Runnable> initCallbacks = new ArrayDeque<>();
     private boolean connecting = false;
     private Bundle options;
+    private boolean hasBackgroundRuning = false;
+    ReactApplicationContext reactAppContext;
 
-    public MusicModule(ReactApplicationContext reactContext) {
-        super(reactContext);
+    public MusicModule(ReactApplicationContext reactAppContext) {
+        super(reactAppContext);
+        this.reactAppContext = reactAppContext;
     }
 
     @Override
@@ -47,7 +67,8 @@ public class MusicModule extends ReactContextBaseJavaModule implements ServiceCo
     public void initialize() {
         ReactContext context = getReactApplicationContext();
         LocalBroadcastManager manager = LocalBroadcastManager.getInstance(context);
-
+        registerScreenBroadcastReceiver(reactAppContext);
+        registerLifecycleEvent(reactAppContext);
         eventHandler = new MusicEvents(context);
         manager.registerReceiver(eventHandler, new IntentFilter(Utils.EVENT_INTENT));
     }
@@ -85,6 +106,67 @@ public class MusicModule extends ReactContextBaseJavaModule implements ServiceCo
         binder = null;
         connecting = false;
     }
+
+
+    private void registerScreenBroadcastReceiver(ReactApplicationContext reactAppContext) {
+        final IntentFilter theFilter = new IntentFilter();
+        /** System Defined Broadcast */
+        theFilter.addAction(Intent.ACTION_SCREEN_ON);
+        theFilter.addAction(Intent.ACTION_SCREEN_OFF);
+
+        BroadcastReceiver screenOnOffReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String strAction = intent.getAction();
+
+                switch (strAction) {
+                    case Intent.ACTION_SCREEN_OFF:
+                        // Log.d(Utils.LOG, "ACTION_SCREEN_OFF");
+                        enableAudioOffload(true);
+                        break;
+                    case Intent.ACTION_SCREEN_ON:
+                        // Log.d(Utils.LOG, "ACTION_SCREEN_ON");
+                        if (hasBackgroundRuning) return;
+                        enableAudioOffload(false);
+                        break;
+                }
+            }
+        };
+
+        reactAppContext.registerReceiver(screenOnOffReceiver, theFilter);
+    }
+
+    private void registerLifecycleEvent(ReactApplicationContext reactAppContext) {
+        LifecycleEventListener lifecycleEventListener = new LifecycleEventListener() {
+            @Override
+            public void onHostResume() {
+                hasBackgroundRuning = false;
+                enableAudioOffload(false);
+                // Log.d(Utils.LOG, "onHostResume");
+            }
+
+            @Override
+            public void onHostPause() {
+                hasBackgroundRuning = true;
+                enableAudioOffload(true);
+                // Log.d(Utils.LOG, "onHostPause");
+            }
+
+             @Override
+             public void onHostDestroy() {
+                // Log.d(Utils.LOG, "onHostDestroy");
+             }
+        };
+
+        reactAppContext.addLifecycleEventListener(lifecycleEventListener);
+    }
+
+    private void enableAudioOffload(boolean enabled) {
+        // Log.d(Utils.LOG, "enableAudioOffload: " + (enabled ? "true" : "false"));
+        if (binder == null) return;
+        binder.enableAudioOffload(enabled);
+    }
+
 
     /**
      * Waits for a connection to the service and/or runs the {@link Runnable} in the player thread
@@ -159,22 +241,24 @@ public class MusicModule extends ReactContextBaseJavaModule implements ServiceCo
     }
 
     @ReactMethod
-    public void destroy() {
-        // Ignore if it was already destroyed
-        if (binder == null && !connecting) return;
+    public void destroy(final Promise callback) {
+        waitForConnection(() -> {
+            try {
+                if(binder != null) {
+                    binder.destroy();
+                    binder = null;
+                }
 
-        try {
-            if(binder != null) {
-                binder.destroy();
-                binder = null;
+                ReactContext context = getReactApplicationContext();
+                if(context != null) context.unbindService(this);
+            } catch(Exception ex) {
+                // This method shouldn't be throwing unhandled errors even if something goes wrong.
+                Log.e(Utils.LOG, "An error occurred while destroying the service", ex);
+                callback.reject(ex);
+                return;
             }
-
-            ReactContext context = getReactApplicationContext();
-            if(context != null) context.unbindService(this);
-        } catch(Exception ex) {
-            // This method shouldn't be throwing unhandled errors even if something goes wrong.
-            Log.e(Utils.LOG, "An error occurred while destroying the service", ex);
-        }
+            callback.resolve(null);
+        });
     }
 
     @ReactMethod

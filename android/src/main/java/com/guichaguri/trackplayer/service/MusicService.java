@@ -2,10 +2,10 @@ package com.guichaguri.trackplayer.service;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.media.session.MediaButtonReceiver;
@@ -15,7 +15,7 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.jstasks.HeadlessJsTaskConfig;
-import com.guichaguri.trackplayer.service.Utils;
+
 import javax.annotation.Nullable;
 
 /**
@@ -97,11 +97,11 @@ public class MusicService extends HeadlessJsTaskService {
         if(intent != null && Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
             // Check if the app is on background, then starts a foreground service and then ends it right after
             onStartForeground();
-            
+
             if(manager != null) {
                 MediaButtonReceiver.handleIntent(manager.getMetadata().getSession(), intent);
             }
-            
+
             return START_NOT_STICKY;
         }
 
@@ -111,7 +111,7 @@ public class MusicService extends HeadlessJsTaskService {
         super.onStartCommand(intent, flags, startId);
         return START_NOT_STICKY;
     }
-    
+
     @Override
     public void onCreate() {
         super.onCreate();
