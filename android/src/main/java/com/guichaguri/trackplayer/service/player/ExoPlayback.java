@@ -21,24 +21,16 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline.Window;
-import com.google.android.exoplayer2.extractor.mp4.MdtaMetadataEntry;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
-import com.google.android.exoplayer2.metadata.flac.VorbisComment;
-import com.google.android.exoplayer2.metadata.icy.IcyHeaders;
-import com.google.android.exoplayer2.metadata.icy.IcyInfo;
-import com.google.android.exoplayer2.metadata.id3.TextInformationFrame;
-import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.source.hls.HlsTrackMetadataEntry;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,7 +81,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     public abstract void removeUpcomingTracks();
 
     public abstract void enableAudioOffload(boolean enabled);
-    
+
     public abstract void setRepeatMode(int repeatMode);
 
     public abstract int getRepeatMode();
@@ -271,22 +263,13 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
             // Track changed because it ended
             // We'll use its duration instead of the last known position
             if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION && lastKnownWindow != C.INDEX_UNSET) {
-              if (lastKnownWindow >= player.getCurrentTimeline().getWindowCount()) return;
-              long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
-              if(duration != C.TIME_UNSET) lastKnownPosition = duration;
+                if (lastKnownWindow >= player.getCurrentTimeline().getWindowCount()) return;
+                long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
+                if(duration != C.TIME_UNSET) lastKnownPosition = duration;
             }
 
             manager.onTrackUpdate(prevIndex, lastKnownPosition, nextIndex, next);
-        } else if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION && lastKnownWindow == player.getCurrentWindowIndex()) {
-            Integer nextIndex = getCurrentTrackIndex();
-            Track next = nextIndex == null ? null : queue.get(nextIndex);
-
-            long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
-            if(duration != C.TIME_UNSET) lastKnownPosition = duration;
-
-            manager.onTrackUpdate(nextIndex, lastKnownPosition, nextIndex, next);
         }
-
         lastKnownWindow = player.getCurrentWindowIndex();
         lastKnownPosition = player.getCurrentPosition();
     }

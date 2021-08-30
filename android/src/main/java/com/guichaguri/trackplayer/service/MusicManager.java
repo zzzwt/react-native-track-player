@@ -237,7 +237,7 @@ public class MusicManager {
     public void onTrackUpdate(Integer prevIndex, long prevPos, Integer nextIndex, Track next) {
         Log.d(Utils.LOG, "onTrackUpdate");
 
-        if (previous == null && next == null) return;
+        if (prevIndex == null && next == null) return;
 
         if(next != null && playback.shouldAutoUpdateMetadata()) metadata.updateMetadata(playback, next);
 

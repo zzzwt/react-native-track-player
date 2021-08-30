@@ -1,14 +1,21 @@
 package com.guichaguri.trackplayer.service.models;
 
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART_URI;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DATE;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_GENRE;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_RATING;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
+
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
-import com.guichaguri.trackplayer.service.Utils;
 
-import static android.support.v4.media.MediaMetadataCompat.*;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_RATING;
+import com.guichaguri.trackplayer.service.Utils;
 
 public abstract class TrackMetadata {
     public Uri artwork;
