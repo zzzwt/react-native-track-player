@@ -119,7 +119,6 @@ public class MusicService extends HeadlessJsTaskService {
         startForeground(1, new NotificationCompat.Builder(this, channel).build());
     }
 
-
     @Override
     public void onDestroy() {
         super.onDestroy();

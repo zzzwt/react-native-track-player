@@ -15,6 +15,7 @@ redirect_from:
   * [State](#state)
   * [Rating](#rating)
   * [Capability](#capability)
+  * [Repeat Mode](#repeat-mode)
   * [Pitch Algorithm](#pitch-algorithm)
 * [Functions](#functions)
   * [Lifecycle](#lifecycle-functions)
@@ -23,80 +24,92 @@ redirect_from:
 * [Events](#events)
   * [Media Controls](#media-controls)
   * [Player](#player)
-* [Components](#components)
-  * [ProgressComponent](#progresscomponent)
 * [Objects](#objects)
   * [Track Object](#track-object)
   * [Resource Object](#resource-object)
 
 ## Constants
 ### State
-#### `STATE_NONE`
+#### `State.None`
 State indicating that no media is currently loaded
-#### `STATE_READY`
+#### `State.Ready`
 State indicating that the player is ready to start playing
-#### `STATE_PLAYING`
+#### `State.Playing`
 State indicating that the player is currently playing
-#### `STATE_PAUSED`
+#### `State.Paused`
 State indicating that the player is currently paused
-#### `STATE_STOPPED`
+#### `State.Stopped`
 State indicating that the player is currently stopped
-#### `STATE_BUFFERING`
+#### `State.Buffering`
 State indicating that the player is currently buffering (in "play" state)
-#### `STATE_CONNECTING`
+#### `State.Connecting`
 State indicating that the player is currently buffering (in "pause" state)
 
 ### Rating
-#### `RATING_HEART`
+#### `RatingType.Heart`
 Rating type indicating "with heart" or "without heart", its value is a `boolean`.
-#### `RATING_THUMBS_UP_DOWN`
+#### `RatingType.ThumbsUpDown`
 Rating type indicating "thumbs up" or "thumbs down", its value is a `boolean`.
-#### `RATING_3_STARS`
+#### `RatingType.ThreeStars`
 Rating type indicating 0 to 3 stars, its value is a `number` of stars.
-#### `RATING_4_STARS`
+#### `RatingType.FourStars`
 Rating type indicating 0 to 4 stars, its value is a `number` of stars.
-#### `RATING_5_STARS`
+#### `RatingType.FiveStars`
 Rating type indicating 0 to 5 stars, its value is a `number` of stars.
-#### `RATING_PERCENTAGE`
+#### `RatingType.Percentage`
 Rating type indicating percentage, its value is a `number`.
 
 ### Capability
-#### `CAPABILITY_PLAY`
+#### `Capability.Play`
 Capability indicating the ability to play
-#### `CAPABILITY_PLAY_FROM_ID`
+#### `Capability.PlayFromId`
 Capability indicating the ability to play from a track id (Required for Android Auto)
-#### `CAPABILITY_PLAY_FROM_SEARCH`
+#### `Capability.PlayFromSearch`
 Capability indicating the ability to play from a text/voice search (Required for Android Auto)
-#### `CAPABILITY_PAUSE`
+#### `Capability.Pause`
 Capability indicating the ability to pause
-#### `CAPABILITY_STOP`
+#### `Capability.Stop`
 Capability indicating the ability to stop
-#### `CAPABILITY_SEEK_TO`
+#### `Capability.SeekTo`
 Capability indicating the ability to seek to a position in the timeline
-#### `CAPABILITY_SKIP`
+#### `Capability.Skip`
 Capability indicating the ability to skip to any song in the queue
-#### `CAPABILITY_SKIP_TO_NEXT`
+#### `Capability.SkipToNext`
 Capability indicating the ability to skip to the next track
-#### `CAPABILITY_SKIP_TO_PREVIOUS`
+#### `Capability.SkipToPrevious`
 Capability indicating the ability to skip to the previous track
-#### `CAPABILITY_SET_RATING`
+#### `Capability.SetRating`
 Capability indicating the ability to set the rating value based on the rating type
-#### `CAPABILITY_JUMP_FORWARD`
+#### `Capability.JumpForward`
 Capability indicating the ability to jump forward by the amount of seconds specified in the options
-#### `CAPABILITY_JUMP_BACKWARD`
+#### `Capability.JumpBackward`
 Capability indicating the ability to jump backward by the amount of seconds specified in the options
+#### `Capability.Like`
+(ios-only) Capability indicating the ability to like from control center
+#### `Capability.Dislike`
+(ios-only) Capability indicating the ability to dislike from control center
+#### `Capability.Bookmark`
+(ios-only) Capability indicating the ability to bookmark from control center
 
-### Pitch Algorithm
-#### `PITCH_ALGORITHM_LINEAR`
+### Repeat Mode
+#### `RepeatMode.Off`
+Doesn't repeat.
+#### `RepeatMode.Track`
+Loops the current track.
+#### `RepeatMode.Queue`
+Repeats the whole queue.
+
+### Pitch Algorithm (ios-only)
+#### `PitchAlgorithm.Linear`
 An algorithm suitable for general use.
-#### `PITCH_ALGORITHM_MUSIC`
+#### `PitchAlgorithm.Music`
 An algorithm suitable for music.
-#### `PITCH_ALGORITHM_VOICE`
+#### `PitchAlgorithm.Voice`
 An algorithm suitable for voice.
 
 ## Functions
 ### Lifecycle Functions
-#### `setupPlayer(options)`
+#### `setupPlayer(options: PlayerOptions)`
 Initializes the player with the specified options. These options do not apply to all platforms, see chart below.
 
 These options are different than the ones set using `updateOptions()`. Options other than those listed below will not be applied.
@@ -109,17 +122,17 @@ If the player is already initialized, the promise will resolve instantly.
 
 | Param                | Type     | Description   | Default   | Android | iOS | Windows |
 | -------------------- | -------- | ------------- | --------- | :-----: | :-: | :-----: |
-| options              | `object` | The options   |
-| options.minBuffer    | `number` | Minimum time in seconds that needs to be buffered | 15 | ✓ | ✗ | ✗ |
+| options              | `PlayerOptions` | The options   |
+| options.minBuffer    | `number` | Minimum time in seconds that needs to be buffered | 15 (android), automatic (ios) | ✓ | ✓ | ✗ |
 | options.maxBuffer    | `number` | Maximum time in seconds that needs to be buffered | 50 | ✓ | ✗ | ✗ |
 | options.playBuffer   | `number` | Minimum time in seconds that needs to be buffered to start playing | 2.5 | ✓ | ✗ | ✗ |
 | options.backBuffer   | `number` | Time in seconds that should be kept in the buffer behind the current playhead time. | 0 | ✓ | ✗ | ✗ |
 | options.maxCacheSize | `number` | Maximum cache size in kilobytes | 0 | ✓ | ✗ | ✗ |
-| options.iosCategory  | `string` | [AVAudioSession.Category](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616615-category) for iOS. | `playback` | ✗ | ✓ | ✗ |
-| options.iosCategoryOptions | `array` | [AVAudioSession.CategoryOptions](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616503-categoryoptions) for iOS. | `[]` | ✗ | ✓ | ✗ |
-| options.iosCategoryMode  | `string` | [AVAudioSession.Mode](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616508-mode) for iOS. | `default` | ✗ | ✓ | ✗ |
-| options.iosCategoryPolicy  | `string` | [AVAudioSession.RouteSharingPolicy](https://developer.apple.com/documentation/avfaudio/avaudiosession/2887118-routesharingpolicy) for iOS. | `default` | ✗ | ✓ | ✗ |
+| options.iosCategory  | `IOSCategory` | [AVAudioSession.Category](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616615-category) for iOS. Sets on `play()` | `playback` | ✗ | ✓ | ✗ |
+| options.iosCategoryOptions | `IOSCategoryOptions[]` | [AVAudioSession.CategoryOptions](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616503-categoryoptions) for iOS. Sets on `play()` | `[]` | ✗ | ✓ | ✗ |
+| options.iosCategoryMode  | `IOSCategoryMode` | [AVAudioSession.Mode](https://developer.apple.com/documentation/avfoundation/avaudiosession/1616508-mode) for iOS. Sets on `play()` | `default` | ✗ | ✓ | ✗ |
 | options.waitForBuffer   | `boolean` | Indicates whether the player should automatically delay playback in order to minimize stalling. If you notice that network media immediately pauses after it buffers, setting this to `true` may help. | false | ✗ | ✓ | ✗ |
+| options.autoUpdateMetadata   | `boolean` | Indicates whether the player should automatically update now playing metadata data in control center / notification. | true | ✓ | ✗ | ✗ |
 | options.audioOffload   | `boolean` | Sets whether audio should be played using the offload path, significantly reduces the energy consumption of the playback when audio offload is enabled. | true | ✓ | ✗ | ✗ |
 | options.handleAudioFocus   | `boolean` | True if the player should handle audio focus, false otherwise. | true | ✓ | ✗ | ✗ |
 
@@ -137,39 +150,21 @@ You should use the playback service to register the event handlers that must be 
 | ------- | -------- | ------------- |
 | serviceProvider | `function` | The function that must return an async service function. |
 
-#### `addEventListener(event, listener)`
-Adds a new event listener.
+#### `useTrackPlayerEvents(events: Event[], handler: Handler)`
+Hook that fires on the specified events.
 
 You can find a list of events in the [events section](#events).
 
-This function returns an event subscription instance that can be stored and removed after by executing `remove()`.
-
-**Returns:** `EmitterSubscription`
-
-| Param    | Type     | Description   |
-| -------- | -------- | ------------- |
-| event    | `string` | The event name |
-| listener | `function(data)` | The listener function |
-
-#### `registerEventHandler(handler)`
-**DEPRECATED**: Use registerPlaybackService and addEventListener instead.
-
-Registers an event handler. This function should only be called once, and should be registered right after registering your React application with `AppRegistry`.
-
-| Param   | Type     | Description   |
-| ------- | -------- | ------------- |
-| handler | `function` | The function that acts as an event handler |
-
 ### Queue Functions
-#### `add(tracks, insertBeforeId)`
+#### `add(tracks, insertBeforeIndex)`
 Adds one or more tracks to the queue.
 
-**Returns:** `Promise`
+**Returns:** `Promise<number>` - The promise resolves with the first added track index
 
 | Param          | Type     | Description   |
 | -------------- | -------- | ------------- |
 | tracks         | `array` of [Track Object](#track-object) or a single one | The tracks that will be added |
-| insertBeforeId | `string` | The ID of the track that will be located immediately after the inserted tracks. Set it to `null` to add it at the end of the queue |
+| insertBeforeIndex | `number` | The index of the track that will be located immediately after the inserted tracks. Set it to `null` to add it at the end of the queue |
 
 #### `remove(tracks)`
 Removes one or more tracks from the queue.
@@ -178,16 +173,16 @@ Removes one or more tracks from the queue.
 
 | Param  | Type     | Description   |
 | ------ | -------- | ------------- |
-| tracks | `array` of track ids or a single one | The tracks that will be removed |
+| tracks | `array` of track indexes or a single one | The tracks that will be removed |
 
-#### `skip(id)`
+#### `skip(index)`
 Skips to a track in the queue.
 
 **Returns:** `Promise`
 
-| Param  | Type     | Description   |
-| ------ | -------- | ------------- |
-| id  | `string` | The track id  |
+| Param  | Type     | Description     |
+| ------ | -------- | --------------- |
+| index  | `number` | The track index |
 
 #### `skipToNext()`
 Skips to the next track in the queue.
@@ -202,19 +197,19 @@ Skips to the previous track in the queue.
 #### `reset()`
 Resets the player stopping the current track and clearing the queue.
 
-#### `getTrack(id)`
+#### `getTrack(index)`
 Gets a track object from the queue.
 
 **Returns:** `Promise<`Object as described in [Track Object](#track-object)`>`
 
-| Param    | Type       | Description   |
-| -------- | ---------- | ------------- |
-| id       | `string`   | The track ID  |
+| Param    | Type       | Description     |
+| -------- | ---------- | --------------- |
+| index    | `number`   | The track index |
 
 #### `getCurrentTrack()`
-Gets the id of the current track
+Gets the index of the current track
 
-**Returns:** `Promise<string>`
+**Returns:** `Promise<number>`
 
 #### `getQueue()`
 Gets the whole queue
@@ -224,7 +219,7 @@ Gets the whole queue
 #### `removeUpcomingTracks()`
 Clears any upcoming tracks from the queue.
 
-#### `updateMetadataForTrack(id, metadata)`
+#### `updateMetadataForTrack(index, metadata)`
 Updates the metadata of a track in the queue.
 If the current track is updated, the notification and the Now Playing Center will be updated accordingly.
 
@@ -232,8 +227,21 @@ If the current track is updated, the notification and the Now Playing Center wil
 
 | Param    | Type       | Description   |
 | -------- | ---------- | ------------- |
-| id       | `string`   | The track ID  |
+| index    | `number`   | The track index  |
 | metadata | `object`   | A subset of the [Track Object](#track-object) with only the `artwork`, `title`, `artist`, `album`, `description`, `genre`, `date`, `rating` and `duration` properties. |
+
+#### `setRepeatMode(mode)`
+Sets the repeat mode.
+
+| Param    | Type       | Description     |
+| -------- | ---------- | --------------- |
+| mode     | [Repeat Mode](#repeat-mode) | The repeat mode |
+
+#### `getRepeatMode()`
+Gets the repeat mode.
+
+**Returns:** [Repeat Mode](#repeat-mode)
+
 
 ### Player Functions
 #### `updateOptions(options)`
@@ -247,16 +255,18 @@ Some parameters are unused depending on platform.
 
 | Param     | Type       | Description          | Android | iOS | Windows |
 | --------- | ---------- | -------------------- | :-----: | :-: | :-----: |
-| options      | `object`   | The options |
-| options.ratingType | [Rating Constant](#rating) | The rating type | ✓ | ✗ | ✗ |
-| options.jumpInterval | `number` | The interval in seconds for the jump forward/backward buttons | ✓ | ✓ | ✓ |
-| options.forwardJumpInterval | `number` | The interval in seconds for the jump forward buttons (if not given, backwardJumpInterval value will be used, if it's not given too, jumpInterval value will be used as fallback) | ✓ | ✓ | ✗ |
-| options.backwardJumpInterval | `number` | The interval in seconds for the jump backward buttons (if not given, forwardJumpInterval value will be used, if it's not given too, jumpInterval value will be used as fallback) | ✓ | ✓ | ✓ |
+| options      | `MetadataOptions`   | The options |
+| options.ratingType | [RatingType](#rating) | The rating type | ✓ | ✗ | ✗ |
+| options.forwardJumpInterval | `number` | The interval in seconds for the jump forward buttons (if only one is given then we use that value for both) | ✓ | ✓ | ✗ |
+| options.backwardJumpInterval | `number` | The interval in seconds for the jump backward buttons (if only one is given then we use that value for both) | ✓ | ✓ | ✓ |
 | options.stopWithApp | `boolean` | Whether the player will be destroyed when the app closes | ✓ | ✗ | ✗ |
 | options.alwaysPauseOnInterruption | `boolean` | Whether the `remote-duck` event will be triggered on every interruption | ✓ | ✗ | ✗ |
-| options.capabilities | `array` of [Capability Constants](#capability) | The media controls that will be enabled | ✓ | ✓ | ✓ |
-| options.notificationCapabilities | `array` of [Capability Constants](#capability) | The buttons that it will show in the notification. Defaults to `data.capabilities`  | ✓ | ✗ | ✗ |
-| options.compactCapabilities | `array` of [Capability Constants](#capability) | The buttons that it will show in the compact notification | ✓ | ✗ | ✗ |
+| options.likeOptions | [FeedbackOptions](#feedback-object) | The media controls that will be enabled | ✗ | ✓ | ✗ |
+| options.dislikeOptions | [FeedbackOptions](#feedback-object) | The media controls that will be enabled | ✗ | ✓ | ✗ |
+| options.bookmarkOptions | [FeedbackOptions](#feedback-object) | The media controls that will be enabled | ✗ | ✓ | ✗ |
+| options.capabilities | [Capability[]](#capability) | The media controls that will be enabled | ✓ | ✓ | ✓ |
+| options.notificationCapabilities | [Capability[]](#capability) | The buttons that it will show in the notification. Defaults to `data.capabilities`  | ✓ | ✗ | ✗ |
+| options.compactCapabilities | [Capability[]](#capability) | The buttons that it will show in the compact notification | ✓ | ✗ | ✗ |
 | options.icon | [Resource Object](#resource-object) | The notification icon¹ | ✓ | ✗ | ✗ |
 | options.playIcon | [Resource Object](#resource-object) | The play icon¹ | ✓ | ✗ | ✗ |
 | options.pauseIcon | [Resource Object](#resource-object) | The pause icon¹ | ✓ | ✗ | ✗ |
@@ -381,7 +391,7 @@ Fired when the user skips to a track in the queue. Only fired if the `CAPABILITY
 
 | Param | Type     | Description   |
 | ----- | -------- | ------------- |
-| id    | `string` | The track id  |
+| index | `number` | The track index  |
 
 #### `remote-next`
 Fired when the user presses the next track button. Only fired if the `CAPABILITY_SKIP_TO_NEXT` is allowed.
@@ -445,24 +455,24 @@ Fired when a track is changed.
 
 | Param     | Type     | Description                            |
 | --------- | -------- | -------------------------------------- |
-| track     | `string` | The previous track id. Might be null   |
+| track     | `number` | The previous track index. Might be null   |
 | position  | `number` | The previous track position in seconds |
-| nextTrack | `string` | The next track id. Might be null       |
+| nextTrack | `number` | The next track index. Might be null       |
 
 #### `playback-queue-ended`
 Fired when the queue reaches the end.
 
 | Param    | Type     | Description                               |
 | -------- | -------- | ----------------------------------------- |
-| track    | `string` | The previous track id. Might be null      |
+| track    | `number` | The previous track index. Might be null      |
 | position | `number` | The previous track position in seconds    |
 
 #### `playback-metadata-received`
-Fired when the current track receives metadata encoded in. (e.g. ID3 tags or Icy Metadata).
+Fired when the current track receives metadata encoded in. (e.g. ID3 tags, Icy Metadata, Vorbis Comments or QuickTime metadata).
 
 | Param    | Type     | Description                                         |
 | -------- | -------- | --------------------------------------------------- |
-| source   | `string` | The metadata source (`id3`, `icy` or `icy-headers`) |
+| source   | `string` | The metadata source (`id3`, `icy`, `icy-headers`, `vorbis-comment`, `quicktime`) |
 | title    | `string` | The track title. Might be null                      |
 | url      | `string` | The track url. Might be null                        |
 | artist   | `string` | The track artist. Might be null                     |
@@ -478,26 +488,11 @@ Fired when an error occurs.
 | code    | `string` | The error code    |
 | message | `string` | The error message |
 
-## Components
-#### `ProgressComponent`
-A component base that updates itself every second with a new position. Your app should extend it with a custom render.
-
-| State            | Type     | Description                      |
-| ---------------- | -------- | -------------------------------- |
-| position         | `number` | The current position in seconds  |
-| bufferedPosition | `number` | The buffered position in seconds |
-| duration         | `number` | The duration in seconds          |
-
-| Functions           | Return Type | Description                                     |
-| ------------------- | ----------- | ----------------------------------------------- |
-| getProgress         | `number`    | The current progress expressed between 0 and 1  |
-| getBufferedProgress | `number`    | The buffered progress expressed between 0 and 1 |
-
 ## Objects
 ### Track Object
 Tracks in the player queue are plain javascript objects as described below.
 
-Only the `id`, `url`, `title` and `artist` properties are required for basic playback
+Only the `url`, `title` and `artist` properties are required for basic playback
 
 | Param          | Type                        | Description  |
 | -------------- | --------------------------- | ------------ |
@@ -517,6 +512,16 @@ Only the `id`, `url`, `title` and `artist` properties are required for basic pla
 | artwork        | `string` or [Resource Object](#resource-object) | The artwork url |
 | pitchAlgorithm | [Pitch Algorithm](#pitch-algorithm) | The pitch algorithm |
 | headers        | `object`                    | An object containing all the headers to use in the HTTP request |
+
+### Feedback Object
+Controls the rendering of the control center item.
+
+| Param          | Type                        | Description  |
+| -------------- | --------------------------- | ------------ |
+| isActive       | `boolean`                    | Marks wether the option should be marked as active or "done" |
+| title          | `boolean`                    | The title to give the action (relevant for iOS) |
+
+
 
 ### Resource Object
 Resource objects are the result of `require`/`import` for files.
@@ -566,47 +571,29 @@ const MyComponent = () => {
 };
 ```
 
-#### `useTrackPlayerProgress(interval, pollTrackPlayerStates)`
-A hook alternative to the [Progress Component](#progresscomponent).
+#### useProgress
+A hook alternative to the the deprecated [Progress Component](#progresscomponent).
 
 | State            | Type     | Description                      |
 | ---------------- | -------- | -------------------------------- |
 | position         | `number` | The current position in seconds  |
-| bufferedPosition | `number` | The buffered position in seconds |
+| buffered         | `number` | The buffered position in seconds |
 | duration         | `number` | The duration in seconds          |
 
-`useTrackPlayerProgress` accepts two arguments
-
-| Param                 | Type      | Description                            |
-| --------------------- | --------- | -------------------------------------- |
-| interval              | `number`  | An interval to set the rate (in miliseconds) to poll the track player's progress (default value is `1000` or every second)  |
-| pollTrackPlayerStates | `State[]` | An optional whitelist of playback states at which the track player's progress is polled.  |
-
-More information concerning the `pollTrackPlayerStates` argument:
-
-- Provide `null` in case you want really poll at the `interval`'s rate, no matter the playback state the player is in.
-- By default the hook will only poll while a track is playing or buffering, i.e. the default value for the second argument is:
-
-  ```js
-  [
-    TrackPlayer.STATE_PLAYING,
-    TrackPlayer.STATE_BUFFERING,
-  ]
-  ```
-
+`useProgress` accepts an interval to set the rate (in miliseconds) to poll the track player's progress. The default value is `1000` or every second.
 
 ```jsx
 import React from 'react';
 import { Text, View } from 'react-native';
-import { useTrackPlayerProgress } from 'react-native-track-player';
+import { useProgress } from 'react-native-track-player';
 
 const MyComponent = () => {
-  const { position, bufferedPosition, duration } = useTrackPlayerProgress(1000, null)
+  const { position, buffered, duration } = useProgress()
 
   return (
     <View>
       <Text>Track progress: {position} seconds out of {duration} total</Text>
-      <Text>Buffered progress: {bufferedPosition} seconds buffered out of {duration} total</Text>
+      <Text>Buffered progress: {buffered} seconds buffered out of {duration} total</Text>
     </View>
   )
 }

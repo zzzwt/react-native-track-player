@@ -29,6 +29,7 @@ import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.MusicService;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
+import com.guichaguri.trackplayer.service.models.TrackMetadata;
 import com.guichaguri.trackplayer.service.player.ExoPlayback;
 
 import java.util.ArrayList;
@@ -44,9 +45,8 @@ public class MetadataManager {
     private final MediaSessionCompat session;
 
     private int ratingType = RatingCompat.RATING_NONE;
-    private int jumpInterval = 15;
-    private int forwardJumpInterval = 0;
-    private int backwardJumpInterval = 0;
+    private int forwardJumpInterval = 15;
+    private int backwardJumpInterval = 15;
     private long actions = 0;
     private long compactActions = 0;
     private SimpleTarget<Bitmap> artworkTarget;
@@ -147,9 +147,8 @@ public class MetadataManager {
         builder.setSmallIcon(getIcon(options, "icon", R.drawable.play));
 
         // Update the jump interval
-        jumpInterval = Utils.getInt(options, "jumpInterval", 15);
-        forwardJumpInterval = Utils.getInt(options, "forwardJumpInterval", jumpInterval);
-        backwardJumpInterval = Utils.getInt(options, "backwardJumpInterval", jumpInterval);
+        forwardJumpInterval = Utils.getInt(options, "forwardJumpInterval", 15);
+        backwardJumpInterval = Utils.getInt(options, "backwardJumpInterval", 15);
 
         // Update the rating type
         ratingType = Utils.getInt(options, "ratingType", RatingCompat.RATING_NONE);
@@ -163,15 +162,11 @@ public class MetadataManager {
     }
 
     public int getForwardJumpInterval() {
-        if (forwardJumpInterval > 0) return forwardJumpInterval;
-        if (backwardJumpInterval > 0) return backwardJumpInterval;
-        return jumpInterval;
+        return forwardJumpInterval;
     }
 
     public int getBackwardJumpInterval() {
-        if (backwardJumpInterval > 0) return backwardJumpInterval;
-        if (forwardJumpInterval > 0) return forwardJumpInterval;
-        return jumpInterval;
+        return backwardJumpInterval;
     }
 
     public void removeNotifications() {
@@ -202,7 +197,7 @@ public class MetadataManager {
      * Updates the current track
      * @param track The new track
      */
-    public void updateMetadata(ExoPlayback playback, Track track) {
+    public void updateMetadata(ExoPlayback playback, TrackMetadata track) {
         MediaMetadataCompat.Builder metadata = track.toMediaMetadata();
 
         RequestManager rm = Glide.with(service.getApplicationContext());

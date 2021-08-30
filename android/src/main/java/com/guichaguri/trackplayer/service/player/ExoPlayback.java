@@ -21,20 +21,24 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline.Window;
+import com.google.android.exoplayer2.extractor.mp4.MdtaMetadataEntry;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
+import com.google.android.exoplayer2.metadata.flac.VorbisComment;
 import com.google.android.exoplayer2.metadata.icy.IcyHeaders;
 import com.google.android.exoplayer2.metadata.icy.IcyInfo;
 import com.google.android.exoplayer2.metadata.id3.TextInformationFrame;
 import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.HlsTrackMetadataEntry;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,11 +60,13 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     protected long lastKnownPosition = C.POSITION_UNSET;
     protected int previousState = PlaybackStateCompat.STATE_NONE;
     protected float volumeMultiplier = 1.0F;
+    protected boolean autoUpdateMetadata;
 
-    public ExoPlayback(Context context, MusicManager manager, T player) {
+    public ExoPlayback(Context context, MusicManager manager, T player, boolean autoUpdateMetadata) {
         this.context = context;
         this.manager = manager;
         this.player = player;
+        this.autoUpdateMetadata = autoUpdateMetadata;
 
         // Player.MetadataComponent component = player.getMetadataComponent();
         // if(component != null) component.addMetadataOutput(this);
@@ -83,6 +89,10 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     public abstract void removeUpcomingTracks();
 
     public abstract void enableAudioOffload(boolean enabled);
+    
+    public abstract void setRepeatMode(int repeatMode);
+
+    public abstract int getRepeatMode();
 
     public void updateTrack(int index, Track track) {
         int currentIndex = player.getCurrentWindowIndex();
@@ -93,30 +103,27 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
             manager.getMetadata().updateMetadata(this, track);
     }
 
+    public Integer getCurrentTrackIndex() {
+        int index = player.getCurrentWindowIndex();
+        return index < 0 || index >= queue.size() ? null : index;
+    }
+
     public Track getCurrentTrack() {
         int index = player.getCurrentWindowIndex();
         return index < 0 || index >= queue.size() ? null : queue.get(index);
     }
 
-    public void skip(String id, Promise promise) {
-        if(id == null || id.isEmpty()) {
-            promise.reject("invalid_id", "The ID can't be null or empty");
+    public void skip(int index, Promise promise) {
+        if(index < 0 || index >= queue.size()) {
+            promise.reject("index_out_of_bounds", "The index is out of bounds");
             return;
         }
 
-        for(int i = 0; i < queue.size(); i++) {
-            if(id.equals(queue.get(i).id)) {
-                // lastKnownWindow = player.getCurrentWindowIndex();
-                // lastKnownPosition = player.getCurrentPosition();
+        // lastKnownWindow = player.getCurrentWindowIndex();
+        // lastKnownPosition = player.getCurrentPosition();
 
-
-                player.seekToDefaultPosition(i);
-                promise.resolve(null);
-                return;
-            }
-        }
-
-        promise.reject("track_not_in_queue", "Given track ID was not found in queue");
+        player.seekToDefaultPosition(index);
+        promise.resolve(null);
     }
 
     public void skipToPrevious(Promise promise) {
@@ -177,6 +184,10 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
 
     public boolean isRemote() {
         return false;
+    }
+
+    public boolean shouldAutoUpdateMetadata() {
+        return autoUpdateMetadata;
     }
 
     public long getPosition() {
@@ -253,8 +264,9 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     @Override
     public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
         if(lastKnownWindow != player.getCurrentWindowIndex()) {
-            Track previous = lastKnownWindow == C.INDEX_UNSET || lastKnownWindow >= queue.size() ? null : queue.get(lastKnownWindow);
-            Track next = getCurrentTrack();
+            Integer prevIndex = lastKnownWindow == C.INDEX_UNSET ? null : lastKnownWindow;
+            Integer nextIndex = getCurrentTrackIndex();
+            Track next = nextIndex == null ? null : queue.get(nextIndex);
 
             // Track changed because it ended
             // We'll use its duration instead of the last known position
@@ -264,7 +276,15 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
               if(duration != C.TIME_UNSET) lastKnownPosition = duration;
             }
 
-            manager.onTrackUpdate(previous, lastKnownPosition, next);
+            manager.onTrackUpdate(prevIndex, lastKnownPosition, nextIndex, next);
+        } else if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION && lastKnownWindow == player.getCurrentWindowIndex()) {
+            Integer nextIndex = getCurrentTrackIndex();
+            Track next = nextIndex == null ? null : queue.get(nextIndex);
+
+            long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
+            if(duration != C.TIME_UNSET) lastKnownPosition = duration;
+
+            manager.onTrackUpdate(nextIndex, lastKnownPosition, nextIndex, next);
         }
 
         lastKnownWindow = player.getCurrentWindowIndex();
@@ -332,16 +352,6 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     }
 
     @Override
-    public void onRepeatModeChanged(int repeatMode) {
-        // Repeat mode update
-    }
-
-    @Override
-    public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-        // Shuffle mode update
-    }
-
-    @Override
     public void onPlayerError(PlaybackException error) {
         String code;
         Throwable cause = error.getCause();
@@ -389,88 +399,16 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
             previousState = state;
 
             if(state == PlaybackStateCompat.STATE_STOPPED) {
-                Track previous = getCurrentTrack();
+                Integer previous = getCurrentTrackIndex();
                 long position = getPosition();
-                manager.onTrackUpdate(previous, position, null);
-                manager.onEnd(previous, position);
-            }
-        }
-    }
-
-    private void handleId3Metadata(Metadata metadata) {
-        String title = null, url = null, artist = null, album = null, date = null, genre = null;
-
-        for(int i = 0; i < metadata.length(); i++) {
-            Metadata.Entry entry = metadata.get(i);
-
-            if (entry instanceof TextInformationFrame) {
-                // ID3 text tag
-                TextInformationFrame id3 = (TextInformationFrame) entry;
-                String id = id3.id.toUpperCase();
-
-                if (id.equals("TIT2") || id.equals("TT2")) {
-                    title = id3.value;
-                } else if (id.equals("TALB") || id.equals("TOAL") || id.equals("TAL")) {
-                    album = id3.value;
-                } else if (id.equals("TOPE") || id.equals("TPE1") || id.equals("TP1")) {
-                    artist = id3.value;
-                } else if (id.equals("TDRC") || id.equals("TOR")) {
-                    date = id3.value;
-                } else if (id.equals("TCON") || id.equals("TCO")) {
-                    genre = id3.value;
-                }
-
-            } else if (entry instanceof UrlLinkFrame) {
-                // ID3 URL tag
-                UrlLinkFrame id3 = (UrlLinkFrame) entry;
-                String id = id3.id.toUpperCase();
-
-                if (id.equals("WOAS") || id.equals("WOAF") || id.equals("WOAR") || id.equals("WAR")) {
-                    url = id3.url;
-                }
-
-            }
-        }
-
-        if (title != null || url != null || artist != null || album != null || date != null || genre != null) {
-            manager.onMetadataReceived("id3", title, url, artist, album, date, genre);
-        }
-    }
-
-    private void handleIcyMetadata(Metadata metadata) {
-        for (int i = 0; i < metadata.length(); i++) {
-            Metadata.Entry entry = metadata.get(i);
-
-            if(entry instanceof IcyHeaders) {
-                // ICY headers
-                IcyHeaders icy = (IcyHeaders)entry;
-
-                manager.onMetadataReceived("icy-headers", icy.name, icy.url, null, null, null, icy.genre);
-
-            } else if(entry instanceof IcyInfo) {
-                // ICY data
-                IcyInfo icy = (IcyInfo)entry;
-
-                String artist, title;
-                int index = icy.title == null ? -1 : icy.title.indexOf(" - ");
-
-                if (index != -1) {
-                    artist = icy.title.substring(0, index);
-                    title = icy.title.substring(index + 3);
-                } else {
-                    artist = null;
-                    title = icy.title;
-                }
-
-                manager.onMetadataReceived("icy", title, icy.url, artist, null, null, null);
-
+                manager.onTrackUpdate(previous, position, null, null);
+                manager.onEnd(getCurrentTrackIndex(), getPosition());
             }
         }
     }
 
     @Override
     public void onMetadata(@NonNull Metadata metadata) {
-        handleId3Metadata(metadata);
-        handleIcyMetadata(metadata);
+        SourceMetadata.handleMetadata(manager, metadata);
     }
 }
