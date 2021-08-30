@@ -230,8 +230,8 @@ public class MusicManager {
         if (playState.equals(this.playState)) return;
         this.playState = playState;
 
-        if (playback.shouldAutoUpdateMetadata())
-            metadata.updatePlayback(playback);
+        // if (playback.shouldAutoUpdateMetadata())
+        metadata.updatePlayback(playback);
     }
 
     public void onTrackUpdate(Integer prevIndex, long prevPos, Integer nextIndex, Track next) {
