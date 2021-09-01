@@ -226,7 +226,7 @@ public class MusicManager {
             : Utils.isPaused(state)
               ? "paused"
               : Utils.isStopped(state)
-                ? "stopped" : null;
+                ? "stopped" : "";
 
         if (playState.equals(this.playState) && !Utils.isPlayingState(state))  return;
 
