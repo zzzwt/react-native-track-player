@@ -52,6 +52,7 @@ public class MetadataManager {
     private SimpleTarget<Bitmap> artworkTarget;
     private NotificationCompat.Builder builder;
     private MediaMetadataCompat.Builder prevMetadata = null;
+    private Uri prevArtwork = null;
 
     private Action previousAction, rewindAction, playAction, pauseAction, stopAction, forwardAction, nextAction;
 
@@ -205,22 +206,25 @@ public class MetadataManager {
         RequestManager rm = Glide.with(service.getApplicationContext());
         if(artworkTarget != null) rm.clear(artworkTarget);
 
-        if(track.artwork != null) {
-            artworkTarget = rm.asBitmap()
-                    .load(track.artwork)
-                    .into(new SimpleTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
-                            metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, resource);
-                            builder.setLargeIcon(resource);
-
-                            session.setMetadata(metadata.build());
-                            updateNotification();
-                            artworkTarget = null;
-                        }
-                    });
-        } else {
+        if(track.artwork == null) {
+            prevArtwork = null;
             builder.setLargeIcon(null);
+        } else if (!track.artwork.equals(prevArtwork)) {
+            prevArtwork = track.artwork;
+
+            artworkTarget = rm.asBitmap()
+                .load(track.artwork)
+                .into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                        metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, resource);
+                        builder.setLargeIcon(resource);
+
+                        session.setMetadata(metadata.build());
+                        updateNotification();
+                        artworkTarget = null;
+                    }
+              });
         }
 
         builder.setContentTitle(track.title);
@@ -329,6 +333,7 @@ public class MetadataManager {
 
     private void updateNotification() {
         // Log.d(Utils.LOG, "updateNotification");
+        // Log.e(Utils.LOG, Log.getStackTraceString(new Throwable()));
         if(session.isActive()) {
             service.startForeground(1, builder.build());
         } else {
