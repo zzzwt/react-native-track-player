@@ -227,7 +227,9 @@ public class MusicManager {
               ? "paused"
               : Utils.isStopped(state)
                 ? "stopped" : null;
-        if (playState.equals(this.playState)) return;
+
+        if (playState.equals(this.playState) && !Utils.isPlayingState(state))  return;
+
         this.playState = playState;
 
         // if (playback.shouldAutoUpdateMetadata())
