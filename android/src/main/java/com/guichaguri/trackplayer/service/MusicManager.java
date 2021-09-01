@@ -216,24 +216,19 @@ public class MusicManager {
         Bundle bundle = new Bundle();
         bundle.putInt("state", state);
         service.emit(MusicEvents.PLAYBACK_STATE, bundle);
-        handleUpdateMetadata();
+        if (playback.shouldAutoUpdateMetadata()) handleUpdateMetadata();
     }
 
     private void handleUpdateMetadata() {
         int state = playback.getState();
-        String playState = Utils.isPlaying(state)
-            ? "playing"
-            : Utils.isPaused(state)
-              ? "paused"
-              : Utils.isStopped(state)
-                ? "stopped" : "";
+        String playState = Utils.isPlaying(state) ? "playing" : "paused";
 
         if (playState.equals(this.playState) && !Utils.isPlayingState(state))  return;
 
         this.playState = playState;
 
         // if (playback.shouldAutoUpdateMetadata())
-        metadata.updatePlayback(playback);
+        metadata.updatePlayback(playback, Utils.isPlaying(state));
     }
 
     public void onTrackUpdate(Integer prevIndex, long prevPos, Integer nextIndex, Track next) {
@@ -241,7 +236,7 @@ public class MusicManager {
 
         if (prevIndex == null && next == null) return;
 
-        if(next != null && playback.shouldAutoUpdateMetadata()) metadata.updateMetadata(playback, next);
+        if(next != null && playback.shouldAutoUpdateMetadata()) metadata.updateMetadata(playback, next, Utils.isPlaying(playback.getState()));
 
         Bundle bundle = new Bundle();
         if (prevIndex != null) bundle.putInt("track", prevIndex);

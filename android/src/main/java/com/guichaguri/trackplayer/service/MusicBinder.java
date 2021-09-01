@@ -48,11 +48,11 @@ public class MusicBinder extends Binder {
         manager.getMetadata().updateOptions(bundle);
     }
 
-    public void updateNowPlayingMetadata(NowPlayingMetadata nowPlaying) {
+    public void updateNowPlayingMetadata(NowPlayingMetadata nowPlaying, boolean isPlaying) {
         MetadataManager metadata = manager.getMetadata();
 
         // TODO elapsedTime
-        metadata.updateMetadata(getPlayback(), nowPlaying);
+        metadata.updateMetadata(getPlayback(), nowPlaying, isPlaying);
         metadata.setActive(true);
     }
 

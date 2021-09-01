@@ -51,6 +51,7 @@ public class MetadataManager {
     private long compactActions = 0;
     private SimpleTarget<Bitmap> artworkTarget;
     private NotificationCompat.Builder builder;
+    private MediaMetadataCompat.Builder prevMetadata = null;
 
     private Action previousAction, rewindAction, playAction, pauseAction, stopAction, forwardAction, nextAction;
 
@@ -197,8 +198,9 @@ public class MetadataManager {
      * Updates the current track
      * @param track The new track
      */
-    public void updateMetadata(ExoPlayback playback, TrackMetadata track) {
+    public void updateMetadata(ExoPlayback playback, TrackMetadata track, boolean isPlaying) {
         MediaMetadataCompat.Builder metadata = track.toMediaMetadata();
+        prevMetadata = metadata;
 
         RequestManager rm = Glide.with(service.getApplicationContext());
         if(artworkTarget != null) rm.clear(artworkTarget);
@@ -227,18 +229,16 @@ public class MetadataManager {
 
         session.setMetadata(metadata.build());
 
+        updatePlayback(isPlaying);
         updatePlaybackState(playback);
         updateNotification();
     }
 
     /**
      * Updates the playback state and notification buttons
-     * @param playback The player
      */
     @SuppressLint("RestrictedApi")
-    public void updatePlayback(ExoPlayback playback) {
-        int state = playback.getState();
-        boolean playing = Utils.isPlaying(state);
+    public void updatePlayback(boolean playing) {
         List<Integer> compact = new ArrayList<>();
         builder.mActions.clear();
 
@@ -287,6 +287,14 @@ public class MetadataManager {
 
         }
 
+        // updatePlaybackState(playback);
+        // updateNotification();
+    }
+
+    @SuppressLint("RestrictedApi")
+    public void updatePlayback(ExoPlayback playback, boolean playing) {
+        if (prevMetadata != null) session.setMetadata(prevMetadata.build());
+        updatePlayback(playing);
         updatePlaybackState(playback);
         updateNotification();
     }
@@ -320,6 +328,7 @@ public class MetadataManager {
     }
 
     private void updateNotification() {
+        // Log.d(Utils.LOG, "updateNotification");
         if(session.isActive()) {
             service.startForeground(1, builder.build());
         } else {

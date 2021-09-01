@@ -355,12 +355,12 @@ public class MusicModule extends ReactContextBaseJavaModule implements ServiceCo
     }
 
     @ReactMethod
-    public void updateNowPlayingMetadata(ReadableMap map, final Promise callback) {
+    public void updateNowPlayingMetadata(ReadableMap map, boolean isPlaying, final Promise callback) {
         final Bundle data = Arguments.toBundle(map);
 
         waitForConnection(() -> {
             NowPlayingMetadata metadata = new NowPlayingMetadata(getReactApplicationContext(), data, binder.getRatingType());
-            binder.updateNowPlayingMetadata(metadata);
+            binder.updateNowPlayingMetadata(metadata, isPlaying);
             callback.resolve(null);
         });
     }

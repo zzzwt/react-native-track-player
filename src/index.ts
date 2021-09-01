@@ -129,14 +129,14 @@ function clearNowPlayingMetadata(): Promise<void> {
   return TrackPlayer.clearNowPlayingMetadata()
 }
 
-function updateNowPlayingMetadata(metadata: NowPlayingMetadata): Promise<void> {
+function updateNowPlayingMetadata(metadata: NowPlayingMetadata, playing: boolean): Promise<void> {
   // Clone the object before modifying it
   metadata = Object.assign({}, metadata)
 
   // Resolve the artwork URL
   metadata.artwork = resolveImportedPath(metadata.artwork)
 
-  return TrackPlayer.updateNowPlayingMetadata(metadata)
+  return TrackPlayer.updateNowPlayingMetadata(metadata, playing)
 }
 
 // MARK: - Player API

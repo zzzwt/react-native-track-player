@@ -92,7 +92,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
         queue.set(index, track);
 
         if(currentIndex == index)
-            manager.getMetadata().updateMetadata(this, track);
+            manager.getMetadata().updateMetadata(this, track, Utils.isPlaying(getState()));
     }
 
     public Integer getCurrentTrackIndex() {
