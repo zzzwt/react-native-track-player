@@ -8,6 +8,34 @@ To install release candidates run `yarn add react-native-track-player@next`
 
 ##### Enhancements
 
+* None.
+
+##### Bug Fixes
+
+* None.
+
+## 2.0.3 (19.08.21)
+
+##### Enhancements
+
+* None.
+
+##### Bug Fixes
+
+* Fix `Event.PlaybackQueueEnded` firing on initialization on Android
+  [dcvz](https://github.com/dcvz)
+  [#1229](https://github.com/DoubleSymmetry/react-native-track-player/issues/1229)
+
+* Make `useProgress` unmount aware.
+  [lyswhut](https://github.com/lyswhut)
+
+* Make `usePlaybackState` unmount aware.
+  [dcvz](https://github.com/dcvz)
+
+## 2.0.2 (15.08.21)
+
+##### Enhancements
+
 * Import SwiftAudioEx through podspec
   [dcvz](https://github.com/dcvz)
 
