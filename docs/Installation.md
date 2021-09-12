@@ -25,12 +25,6 @@ Because the iOS module uses Swift, if the user is using a standard react-native 
 
 ![Importing Swift](https://i.imgur.com/CBqBcWs.png)
 
-### Run react-native-swift
-
-```
-react-native swiftify
-```
-
 ## Automatic Link
 Since `react-native-track-player` only support RN 0.60 and above, the module should be autolinked :tada:
 
