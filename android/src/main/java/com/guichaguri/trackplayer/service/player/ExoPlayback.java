@@ -244,7 +244,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
             case Player.STATE_IDLE:
                 return PlaybackStateCompat.STATE_NONE;
             case Player.STATE_READY:
-                return player.getPlayWhenReady() ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
+                return player.getPlayWhenReady() && player.isPlaying() ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
         }
         return PlaybackStateCompat.STATE_NONE;
     }
@@ -321,6 +321,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
 
     @Override
     public void onPlaybackSuppressionReasonChanged(int playbackSuppressionReason) {
+        handlePlaybackStateChange();
         boolean ducking = false;
 
         switch (playbackSuppressionReason) {
