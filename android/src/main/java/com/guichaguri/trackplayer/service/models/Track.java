@@ -20,7 +20,7 @@ import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.upstream.RawResourceDataSource;
 import com.google.android.exoplayer2.util.Util;
@@ -155,7 +155,7 @@ public class Track extends TrackMetadata {
         } else if(Utils.isLocal(uri)) {
 
             // Creates a local source factory
-            ds = new DefaultDataSourceFactory(ctx, userAgent);
+            ds = new DefaultDataSource.Factory(ctx);
 
         } else {
 
