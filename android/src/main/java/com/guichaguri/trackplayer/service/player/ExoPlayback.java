@@ -87,7 +87,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     public abstract int getRepeatMode();
 
     public void updateTrack(int index, Track track) {
-        int currentIndex = player.getCurrentWindowIndex();
+        int currentIndex = player.getCurrentMediaItemIndex();
 
         queue.set(index, track);
 
@@ -96,12 +96,12 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     }
 
     public Integer getCurrentTrackIndex() {
-        int index = player.getCurrentWindowIndex();
+        int index = player.getCurrentMediaItemIndex();
         return index < 0 || index >= queue.size() ? null : index;
     }
 
     public Track getCurrentTrack() {
-        int index = player.getCurrentWindowIndex();
+        int index = player.getCurrentMediaItemIndex();
         return index < 0 || index >= queue.size() ? null : queue.get(index);
     }
 
@@ -119,7 +119,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     }
 
     public void skipToPrevious(Promise promise) {
-        int prev = player.getPreviousWindowIndex();
+        int prev = player.getPreviousMediaItemIndex();
 
         if(prev == C.INDEX_UNSET) {
             promise.reject("no_previous_track", "There is no previous track");
@@ -134,7 +134,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     }
 
     public void skipToNext(Promise promise) {
-        int next = player.getNextWindowIndex();
+        int next = player.getNextMediaItemIndex();
 
         if(next == C.INDEX_UNSET) {
             promise.reject("queue_exhausted", "There is no tracks left to play");
@@ -204,7 +204,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
 
     public void seekTo(long time) {
         if (queue.size() < 1) return;
-        lastKnownWindow = player.getCurrentWindowIndex();
+        lastKnownWindow = player.getCurrentMediaItemIndex();
         lastKnownPosition = player.getCurrentPosition();
 
         player.seekTo(time);
@@ -255,7 +255,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
 
     @Override
     public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-        if(lastKnownWindow != player.getCurrentWindowIndex()) {
+        if(lastKnownWindow != player.getCurrentMediaItemIndex()) {
             Integer prevIndex = lastKnownWindow == C.INDEX_UNSET ? null : lastKnownWindow;
             Integer nextIndex = getCurrentTrackIndex();
             Track next = nextIndex == null ? null : queue.get(nextIndex);
@@ -270,7 +270,7 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
 
             manager.onTrackUpdate(prevIndex, lastKnownPosition, nextIndex, next);
         }
-        lastKnownWindow = player.getCurrentWindowIndex();
+        lastKnownWindow = player.getCurrentMediaItemIndex();
         lastKnownPosition = player.getCurrentPosition();
     }
 

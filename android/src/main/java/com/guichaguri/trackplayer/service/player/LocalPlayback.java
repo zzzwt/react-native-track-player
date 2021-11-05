@@ -5,11 +5,11 @@ import android.util.Log;
 
 import com.facebook.react.bridge.Promise;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.database.DatabaseProvider;
-import com.google.android.exoplayer2.database.ExoDatabaseProvider;
+import com.google.android.exoplayer2.database.StandaloneDatabaseProvider;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -21,12 +21,15 @@ import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Guichaguri
  */
-public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
+public class LocalPlayback extends ExoPlayback<ExoPlayer> {
 
     private final long cacheMaxSize;
 
@@ -35,7 +38,7 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
     private boolean prepared = false;
     private boolean enabledAudioOffload = false;
 
-    public LocalPlayback(Context context, MusicManager manager, SimpleExoPlayer player, long maxCacheSize,
+    public LocalPlayback(Context context, MusicManager manager, ExoPlayer player, long maxCacheSize,
                          boolean autoUpdateMetadata) {
         super(context, manager, player, autoUpdateMetadata);
         this.cacheMaxSize = maxCacheSize;
@@ -45,7 +48,7 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
     public void initialize() {
         if(cacheMaxSize > 0) {
             File cacheDir = new File(context.getCacheDir(), "TrackPlayer");
-            DatabaseProvider db = new ExoDatabaseProvider(context);
+            DatabaseProvider db = new StandaloneDatabaseProvider(context);
             cache = new SimpleCache(cacheDir, new LeastRecentlyUsedCacheEvictor(cacheMaxSize), db);
         } else {
             cache = null;
@@ -99,7 +102,7 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
 
     @Override
     public void remove(List<Integer> indexes, Promise promise) {
-        int currentIndex = player.getCurrentWindowIndex();
+        int currentIndex = player.getCurrentMediaItemIndex();
 
         // Sort the list so we can loop through sequentially
         Collections.sort(indexes);
@@ -131,7 +134,7 @@ public class LocalPlayback extends ExoPlayback<SimpleExoPlayer> {
 
     @Override
     public void removeUpcomingTracks() {
-        int currentIndex = player.getCurrentWindowIndex();
+        int currentIndex = player.getCurrentMediaItemIndex();
         if (currentIndex == C.INDEX_UNSET) return;
 
         for (int i = queue.size() - 1; i > currentIndex; i--) {
