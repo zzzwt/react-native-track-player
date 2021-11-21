@@ -141,12 +141,7 @@ public class Track extends TrackMetadata {
             try {
                 RawResourceDataSource raw = new RawResourceDataSource(ctx);
                 raw.open(new DataSpec(uri));
-                ds = new DataSource.Factory() {
-                    @Override
-                    public DataSource createDataSource() {
-                        return raw;
-                    }
-                };
+                ds = () -> raw;
             } catch(IOException ex) {
                 // Should never happen
                 throw new RuntimeException(ex);

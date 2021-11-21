@@ -9,6 +9,8 @@ import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame;
 import com.google.android.exoplayer2.metadata.mp4.MdtaMetadataEntry;
 import com.guichaguri.trackplayer.service.MusicManager;
 
+import java.nio.charset.StandardCharsets;
+
 public class SourceMetadata {
 
     /**
@@ -37,17 +39,30 @@ public class SourceMetadata {
                 TextInformationFrame id3 = (TextInformationFrame) entry;
                 String id = id3.id.toUpperCase();
 
-                if (id.equals("TIT2") || id.equals("TT2")) {
-                    title = id3.value;
-                } else if (id.equals("TALB") || id.equals("TOAL") || id.equals("TAL")) {
-                    album = id3.value;
-                } else if (id.equals("TOPE") || id.equals("TPE1") || id.equals("TP1")) {
-                    artist = id3.value;
-                } else if (id.equals("TDRC") || id.equals("TOR")) {
-                    date = id3.value;
-                } else if (id.equals("TCON") || id.equals("TCO")) {
-                    genre = id3.value;
-                }
+              switch (id) {
+                case "TIT2":
+                case "TT2":
+                  title = id3.value;
+                  break;
+                case "TALB":
+                case "TOAL":
+                case "TAL":
+                  album = id3.value;
+                  break;
+                case "TOPE":
+                case "TPE1":
+                case "TP1":
+                  artist = id3.value;
+                  break;
+                case "TDRC":
+                case "TOR":
+                  date = id3.value;
+                  break;
+                case "TCON":
+                case "TCO":
+                  genre = id3.value;
+                  break;
+              }
 
             } else if (entry instanceof UrlLinkFrame) {
                 // ID3 URL tag
@@ -118,19 +133,26 @@ public class SourceMetadata {
             VorbisComment comment = (VorbisComment) entry;
             String key = comment.key;
 
-            if (key.equals("TITLE")) {
-                title = comment.value;
-            } else if (key.equals("ARTIST")) {
-                artist = comment.value;
-            } else if (key.equals("ALBUM")) {
-                album = comment.value;
-            } else if (key.equals("DATE")) {
-                date = comment.value;
-            } else if (key.equals("GENRE")) {
-                genre = comment.value;
-            } else if (key.equals("URL")) {
-                url = comment.value;
-            }
+          switch (key) {
+            case "TITLE":
+              title = comment.value;
+              break;
+            case "ARTIST":
+              artist = comment.value;
+              break;
+            case "ALBUM":
+              album = comment.value;
+              break;
+            case "DATE":
+              date = comment.value;
+              break;
+            case "GENRE":
+              genre = comment.value;
+              break;
+            case "URL":
+              url = comment.value;
+              break;
+          }
         }
 
         if (title != null || url != null || artist != null || album != null || date != null || genre != null) {
@@ -155,17 +177,23 @@ public class SourceMetadata {
             String key = mdta.key;
 
             try {
-                if (key.equals("com.apple.quicktime.title")) {
-                    title = new String(mdta.value, "UTF-8");
-                } else if (key.equals("com.apple.quicktime.artist")) {
-                    artist = new String(mdta.value, "UTF-8");
-                } else if (key.equals("com.apple.quicktime.album")) {
-                    album = new String(mdta.value, "UTF-8");
-                } else if (key.equals("com.apple.quicktime.creationdate")) {
-                    date = new String(mdta.value, "UTF-8");
-                } else if (key.equals("com.apple.quicktime.genre")) {
-                    genre = new String(mdta.value, "UTF-8");
-                }
+              switch (key) {
+                case "com.apple.quicktime.title":
+                  title = new String(mdta.value, StandardCharsets.UTF_8);
+                  break;
+                case "com.apple.quicktime.artist":
+                  artist = new String(mdta.value, StandardCharsets.UTF_8);
+                  break;
+                case "com.apple.quicktime.album":
+                  album = new String(mdta.value, StandardCharsets.UTF_8);
+                  break;
+                case "com.apple.quicktime.creationdate":
+                  date = new String(mdta.value, StandardCharsets.UTF_8);
+                  break;
+                case "com.apple.quicktime.genre":
+                  genre = new String(mdta.value, StandardCharsets.UTF_8);
+                  break;
+              }
             } catch(Exception ex) {
                 // Ignored
             }

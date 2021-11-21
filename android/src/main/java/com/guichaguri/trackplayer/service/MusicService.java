@@ -1,6 +1,5 @@
 package com.guichaguri.trackplayer.service;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -72,7 +71,7 @@ public class MusicService extends HeadlessJsTaskService {
 
             // Checks whether there is a React activity
             if(reactContext == null || !reactContext.hasCurrentActivity()) {
-                String channel = Utils.getNotificationChannel((Context) this);
+                String channel = Utils.getNotificationChannel(this);
 
                 // Sets the service to foreground with an empty notification
                 startForeground(1, new NotificationCompat.Builder(this, channel).build());
@@ -115,7 +114,7 @@ public class MusicService extends HeadlessJsTaskService {
     @Override
     public void onCreate() {
         super.onCreate();
-        String channel = Utils.getNotificationChannel((Context) this);
+        String channel = Utils.getNotificationChannel(this);
         startForeground(1, new NotificationCompat.Builder(this, channel).build());
     }
 

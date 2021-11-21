@@ -14,6 +14,7 @@ import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
 import androidx.media.app.NotificationCompat.MediaStyle;
@@ -56,11 +57,12 @@ public class MetadataManager {
 
     private Action previousAction, rewindAction, playAction, pauseAction, stopAction, forwardAction, nextAction;
 
+    @SuppressLint("UnspecifiedImmutableFlag")
     public MetadataManager(MusicService service, MusicManager manager) {
         this.service = service;
         this.manager = manager;
 
-        String channel = Utils.getNotificationChannel((Context) service);
+        String channel = Utils.getNotificationChannel(service);
         this.builder = new NotificationCompat.Builder(service, channel);
         this.session = new MediaSessionCompat(service, "TrackPlayer", null, null);
 
@@ -216,7 +218,7 @@ public class MetadataManager {
                 .load(track.artwork)
                 .into(new SimpleTarget<Bitmap>() {
                     @Override
-                    public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                    public void onResourceReady(@NonNull Bitmap resource, Transition<? super Bitmap> transition) {
                         metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, resource);
                         builder.setLargeIcon(resource);
 

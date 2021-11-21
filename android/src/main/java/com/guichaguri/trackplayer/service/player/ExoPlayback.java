@@ -21,12 +21,12 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline.Window;
+import com.google.android.exoplayer2.TracksInfo;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
 import com.google.android.exoplayer2.source.TrackGroup;
-import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
+import com.google.common.collect.ImmutableList;
 import com.guichaguri.trackplayer.service.MusicManager;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.models.Track;
@@ -275,22 +275,23 @@ public abstract class ExoPlayback<T extends Player> implements Player.Listener, 
     }
 
     @Override
-    public void onTracksChanged(TrackGroupArray trackGroups, @NonNull TrackSelectionArray trackSelections) {
-        for(int i = 0; i < trackGroups.length; i++) {
-            // Loop through all track groups.
-            // As for the current implementation, there should be only one
-            TrackGroup group = trackGroups.get(i);
+    public void onTracksInfoChanged(TracksInfo tracksInfo) {
+      ImmutableList<TracksInfo.TrackGroupInfo> trackGroupsInfo = tracksInfo.getTrackGroupInfos();
 
-            for(int f = 0; f < group.length; f++) {
-                // Loop through all formats inside the track group
-                Format format = group.getFormat(f);
+      for(int i = 0; i < trackGroupsInfo.size(); i++) {
+        // Loop through all track groups.
+        // As for the current implementation, there should be only one
+        TrackGroup group = trackGroupsInfo.get(i).getTrackGroup();
+        for(int f = 0; f < group.length; f++) {
+          // Loop through all formats inside the track group
+          Format format = group.getFormat(f);
 
-                // Parse the metadata if it is present
-                if (format.metadata != null) {
-                    onMetadata(format.metadata);
-                }
-            }
+          // Parse the metadata if it is present
+          if (format.metadata != null) {
+            onMetadata(format.metadata);
+          }
         }
+      }
     }
 
     // @Override
