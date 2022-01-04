@@ -54,6 +54,7 @@ public class MetadataManager {
     private NotificationCompat.Builder builder;
     private MediaMetadataCompat.Builder prevMetadata = null;
     private Uri prevArtwork = null;
+    private Bitmap prevArtResource = null;
 
     private Action previousAction, rewindAction, playAction, pauseAction, stopAction, forwardAction, nextAction;
 
@@ -211,14 +212,20 @@ public class MetadataManager {
         if(track.artwork == null) {
             prevArtwork = null;
             builder.setLargeIcon(null);
-        } else if (!track.artwork.equals(prevArtwork)) {
+        } else if (track.artwork.equals(prevArtwork) && prevArtResource != null) {
+            metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, prevArtResource);
+            builder.setLargeIcon(prevArtResource);
+        } else {
             prevArtwork = track.artwork;
+            prevArtResource = null;
 
             artworkTarget = rm.asBitmap()
                 .load(track.artwork)
                 .into(new SimpleTarget<Bitmap>() {
                     @Override
                     public void onResourceReady(@NonNull Bitmap resource, Transition<? super Bitmap> transition) {
+                        prevArtResource = resource;
+
                         metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, resource);
                         builder.setLargeIcon(resource);
 
@@ -226,7 +233,7 @@ public class MetadataManager {
                         updateNotification();
                         artworkTarget = null;
                     }
-              });
+                });
         }
 
         builder.setContentTitle(track.title);
