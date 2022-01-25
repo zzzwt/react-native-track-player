@@ -286,7 +286,7 @@ public class RNTrackPlayer: RCTEventEmitter {
         resolve(NSNull())
     }
 
-    @objc(destroy:resolver:rejecter:)
+    @objc(resolver:rejecter:)
     public func destroy(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         print("Destroying player")
         self.player.stop()
@@ -543,7 +543,7 @@ public class RNTrackPlayer: RCTEventEmitter {
         player.nowPlayingInfoController.clear()
     }
 
-    @objc(updateNowPlayingMetadata:resolver:rejecter:)
+    @objc(updateNowPlayingMetadata:isplaying:resolver:rejecter:)
     public func updateNowPlayingMetadata(metadata: [String: Any],isplaying: Bool,resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         Metadata.update(for: player, with: metadata)
         resolve(NSNull())
