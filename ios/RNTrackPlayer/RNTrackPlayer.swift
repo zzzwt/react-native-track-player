@@ -286,13 +286,14 @@ public class RNTrackPlayer: RCTEventEmitter {
         resolve(NSNull())
     }
 
-    @objc(destroy)
-    public func destroy() {
+    @objc(destroy:resolver:rejecter:)
+    public func destroy(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         print("Destroying player")
         self.player.stop()
         self.player.nowPlayingInfoController.clear()
         try? AVAudioSession.sharedInstance().setActive(false)
         hasInitialized = false
+        resolve(NSNull())
     }
 
     @objc(updateOptions:resolver:rejecter:)
@@ -545,6 +546,7 @@ public class RNTrackPlayer: RCTEventEmitter {
     @objc(updateNowPlayingMetadata:resolver:rejecter:)
     public func updateNowPlayingMetadata(metadata: [String: Any], resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         Metadata.update(for: player, with: metadata)
+        resolve(NSNull())
     }
 
     // MARK: - QueuedAudioPlayer Event Handlers
