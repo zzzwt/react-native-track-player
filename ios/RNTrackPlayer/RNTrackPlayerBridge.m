@@ -93,7 +93,7 @@ RCT_EXTERN_METHOD(getCurrentTrack:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
 
 RCT_EXTERN_METHOD(getDuration:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject);
+                  (RCTPromiseRejectBlock)reject);
 
 RCT_EXTERN_METHOD(getBufferedPosition:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
