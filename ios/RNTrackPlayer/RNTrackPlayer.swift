@@ -502,7 +502,7 @@ public class RNTrackPlayer: RCTEventEmitter {
     }
 
     @objc(getDuration:rejecter:)
-    public func getDuration(resolve: RCTPromiseResolveBlock, rejecter: RCTPromiseRejectBlock) {
+    public func getDuration(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         resolve(player.duration)
     }
 
