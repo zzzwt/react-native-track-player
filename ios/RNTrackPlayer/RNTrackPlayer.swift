@@ -286,7 +286,7 @@ public class RNTrackPlayer: RCTEventEmitter {
         resolve(NSNull())
     }
 
-    @objc(resolver:rejecter:)
+    @objc(destroy:rejecter:)
     public func destroy(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         print("Destroying player")
         self.player.stop()
