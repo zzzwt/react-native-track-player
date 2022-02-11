@@ -111,7 +111,7 @@ RCT_EXTERN_METHOD(updateMetadataForTrack:(nonnull NSNumber *)trackIndex
 RCT_EXTERN_METHOD(clearNowPlayingMetadata:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
 
-RCT_EXTERN_METHOD(updateNowPlayingMetadata:(NSDictionary *)metadata
+RCT_EXTERN_METHOD(updateNowPlayingMetadata:metadata:(NSDictionary *)metadata
                   isplaying: true
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
