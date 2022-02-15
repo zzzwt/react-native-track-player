@@ -112,7 +112,7 @@ RCT_EXTERN_METHOD(clearNowPlayingMetadata:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
 
 RCT_EXTERN_METHOD(updateNowPlayingMetadata:(NSDictionary *)metadata
-                  resolve:(RCTPromiseResolveBlock)resolve
+                  resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
 
 @end
